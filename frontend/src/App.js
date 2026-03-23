@@ -4,6 +4,7 @@ import axios from "axios";
 export default function App() {
   const [listening, setListening] = useState(false);
   const [messages, setMessages] = useState([]);
+  // eslint-disable-next-line no-unused-vars
   const [isSpeaking, setIsSpeaking] = useState(false);
   const chatRef = useRef(null);
 
@@ -56,6 +57,7 @@ export default function App() {
     };
 
     recognitionRef.current = recognition;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listening]);
 
   // const humanize = (text) => {
