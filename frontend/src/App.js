@@ -39,7 +39,8 @@ export default function App() {
       setMessages((prev) => [...prev, { sender: "user", text }]);
 
       try {
-        const res = await axios.post("http://127.0.0.1:8000/chat", {
+        // const res = await axios.post("http://127.0.0.1:8000/chat", {
+        const res = await axios.post("https://mantri-ai.onrender.com/chat", {
           message: text,
         });
 
