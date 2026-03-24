@@ -93,7 +93,8 @@ export default function App() {
       window.speechSynthesis.speak(speech);
     } else {
       try {
-        const res = await axios.post("http://127.0.0.1:8000/tts", {
+        // const res = await axios.post("http://127.0.0.1:8000/tts", {
+        const res = await axios.post("https://mantri-ai.onrender.com/tts", {
           message: text,
         });
 
