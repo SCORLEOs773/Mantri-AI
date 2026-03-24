@@ -4,6 +4,7 @@ import axios from "axios";
 export default function App() {
   const [listening, setListening] = useState(false);
   const [messages, setMessages] = useState([]);
+  const [ttsMode, setTtsMode] = useState("web"); // "web" or "murf"
   // eslint-disable-next-line no-unused-vars
   const [isSpeaking, setIsSpeaking] = useState(false);
   const chatRef = useRef(null);
@@ -44,14 +45,12 @@ export default function App() {
           message: text,
         });
 
-        const reply =
-          res.data?.choices?.[0]?.message?.content ||
-          "Sorry, something went wrong.";
+        const reply = res.data.reply;
+        const ttsText = res.data.tts_text;
 
         setMessages((prev) => [...prev, { sender: "ai", text: reply }]);
 
-        // speak(humanize(reply));
-        speak(reply);
+        speak(ttsText);
       } catch (err) {
         console.error(err);
       }
@@ -61,10 +60,6 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listening]);
 
-  // const humanize = (text) => {
-  //   return text.replace(/\./g, "... ").replace(/,/g, ", ");
-  // };
-
   const startListening = () => {
     window.speechSynthesis.cancel();
     setListening(true);
@@ -73,32 +68,52 @@ export default function App() {
     recognitionRef.current.start();
   };
 
-  const speak = (text) => {
+  const speak = async (text) => {
     setIsSpeaking(true);
 
-    const speech = new SpeechSynthesisUtterance(text);
-    const voices = window.speechSynthesis.getVoices();
+    if (ttsMode === "web") {
+      // ✅ Existing Web Speech TTS
+      const speech = new SpeechSynthesisUtterance(text);
+      const voices = window.speechSynthesis.getVoices();
 
-    const hindiVoice = voices.find((v) => v.lang === "hi-IN");
-    const englishVoice = voices.find((v) => v.lang === "en-IN");
+      const hindiVoice = voices.find((v) => v.lang === "hi-IN");
+      const englishVoice = voices.find((v) => v.lang === "en-IN");
 
-    speech.voice = hindiVoice || englishVoice || voices[0];
-    speech.lang = hindiVoice ? "hi-IN" : "en-IN";
+      speech.voice = hindiVoice || englishVoice || voices[0];
+      speech.lang = hindiVoice ? "hi-IN" : "en-IN";
 
-    speech.rate = 0.9;
-    speech.pitch = 1.1;
+      speech.rate = 0.9;
+      speech.pitch = 1.1;
 
-    speech.onend = () => {
-      setIsSpeaking(false);
+      speech.onend = () => {
+        setIsSpeaking(false);
+        if (listening) recognitionRef.current.start();
+      };
 
-      // 🎤 Restart listening AFTER AI finishes
-      if (listening) {
-        isRecognizingRef.current = false; // force reset
-        recognitionRef.current.start();
+      window.speechSynthesis.speak(speech);
+    } else {
+      try {
+        const res = await axios.post("http://127.0.0.1:8000/tts", {
+          message: text,
+        });
+
+        const audio = new Audio(res.data.audioFile);
+        audio.play();
+
+        audio.onended = () => {
+          setIsSpeaking(false);
+          if (listening) recognitionRef.current.start();
+        };
+      } catch (err) {
+        console.error("Murf failed, fallback to web TTS");
+
+        setTtsMode("web");
+
+        // ✅ direct fallback (no recursion)
+        const speech = new SpeechSynthesisUtterance(text);
+        window.speechSynthesis.speak(speech);
       }
-    };
-
-    window.speechSynthesis.speak(speech);
+    }
   };
 
   return (
@@ -160,6 +175,20 @@ export default function App() {
           }}
         >
           Interrupt
+        </button>
+        <button
+          onClick={() => setTtsMode(ttsMode === "web" ? "murf" : "web")}
+          style={{
+            padding: "10px 18px",
+            borderRadius: "10px",
+            border: "none",
+            cursor: "pointer",
+            background: "#9333ea",
+            color: "white",
+            fontWeight: "bold",
+          }}
+        >
+          {ttsMode === "web" ? "Switch to Murf" : "Switch to Web TTS"}
         </button>
       </div>
 
