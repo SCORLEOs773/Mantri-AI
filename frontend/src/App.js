@@ -5,12 +5,17 @@ export default function App() {
   const [listening, setListening] = useState(false);
   const [messages, setMessages] = useState([]);
   const [ttsMode, setTtsMode] = useState("web"); // "web" or "murf"
+  const ttsModeRef = useRef("web");
   // eslint-disable-next-line no-unused-vars
   const [isSpeaking, setIsSpeaking] = useState(false);
   const chatRef = useRef(null);
 
   const recognitionRef = useRef(null);
   const isRecognizingRef = useRef(false);
+
+  useEffect(() => {
+    ttsModeRef.current = ttsMode;
+  }, [ttsMode]);
 
   useEffect(() => {
     const recognition = new window.webkitSpeechRecognition();
@@ -71,7 +76,7 @@ export default function App() {
   const speak = async (text) => {
     setIsSpeaking(true);
 
-    if (ttsMode === "web") {
+    if (ttsModeRef.current === "web") {
       // ✅ Existing Web Speech TTS
       const speech = new SpeechSynthesisUtterance(text);
       const voices = window.speechSynthesis.getVoices();
@@ -178,7 +183,14 @@ export default function App() {
           Interrupt
         </button>
         <button
-          onClick={() => setTtsMode(ttsMode === "web" ? "murf" : "web")}
+          onClick={() => {
+            setTtsMode((prev) => {
+              const next = prev === "web" ? "murf" : "web";
+              ttsModeRef.current = next;
+              return next;
+            });
+          }}
+          disabled={isSpeaking}
           style={{
             padding: "10px 18px",
             borderRadius: "10px",
