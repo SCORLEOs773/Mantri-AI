@@ -40,7 +40,7 @@ def convert_to_hindi(text):
 
     payload = {
         # "model": "llama-3.3-70b-versatile",
-        "model": "openai/gpt-oss-120b"
+        "model": "openai/gpt-oss-120b",
         "messages": [
             {
                 "role": "system",
